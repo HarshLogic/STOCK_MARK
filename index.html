@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yes Bank Stock Price Prediction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 text-gray-200 p-4">
+    <div class="container mx-auto p-8 bg-gray-900 rounded-3xl shadow-2xl mt-8">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">Yes Bank Stock Price Prediction</h1>
+        <p class="text-center text-gray-400 mt-2">A data visualization of the monthly stock prices and a prediction model.</p>
+
+        <!-- Project Summary & Details -->
+        <div class="mt-10">
+            <h2 class="text-2xl font-semibold text-gray-300">Project Summary</h2>
+            <p class="mt-4 text-gray-400 leading-relaxed">
+                This project uses a regression model to predict the monthly closing price of Yes Bank stock based on historical data. The dataset includes monthly stock prices from July 2005 to November 2020, with Open, High, Low, and Close values. The analysis involves data wrangling, visualization, and implementing different machine learning models to find the best fit.
+            </p>
+            <h3 class="text-xl font-semibold text-gray-300 mt-4">Key Insights from Analysis:</h3>
+            <ul class="list-disc list-inside mt-2 text-gray-400 space-y-1">
+                <li>The long-term trend shows high volatility and a significant downtrend after 2018.</li>
+                <li>The distribution of the closing price is right-skewed, with occasional high spikes.</li>
+                <li>There is a strong linear correlation between the Open and Close prices.</li>
+            </ul>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Chart 1: Monthly Closing Price Over Time -->
+            <div class="card p-6">
+                <h3 class="text-xl font-semibold text-center text-gray-300">Monthly Closing Price Over Time</h3>
+                <div class="chart-container mt-4">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Open vs Close Price Scatter Plot -->
+            <div class="card p-6">
+                <h3 class="text-xl font-semibold text-center text-gray-300">Open vs Close Price</h3>
+                <div class="chart-container mt-4">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 3: Actual vs. Predicted Prices -->
+            <div class="card p-6 md:col-span-2">
+                <h3 class="text-xl font-semibold text-center text-gray-300">Actual vs. Predicted Prices (Test Set)</h3>
+                <div class="chart-container mt-4">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Evaluation Section -->
+        <div class="mt-10 card p-6">
+            <h2 class="text-2xl font-semibold text-gray-300">Model Performance</h2>
+            <p class="mt-4 text-gray-400">
+                A Ridge Regression model was chosen as the final predictive model. It outperformed other linear models by providing a slightly better R² score and a lower Mean Absolute Error (MAE), indicating more accurate and reliable predictions.
+            </p>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold text-gray-300">Evaluation Metrics (Test Set)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 text-center">
+                    <div class="bg-indigo-600 p-4 rounded-xl shadow-lg border border-indigo-400">
+                        <span class="block text-4xl font-bold text-white">0.99</span>
+                        <span class="block text-indigo-200 mt-1">R² Score</span>
+                    </div>
+                    <div class="bg-emerald-600 p-4 rounded-xl shadow-lg border border-emerald-400">
+                        <span class="block text-4xl font-bold text-white">5.81</span>
+                        <span class="block text-emerald-200 mt-1">Mean Absolute Error (MAE)</span>
+                    </div>
+                    <div class="bg-rose-600 p-4 rounded-xl shadow-lg border border-rose-400">
+                        <span class="block text-4xl font-bold text-white">86.64</span>
+                        <span class="block text-rose-200 mt-1">Mean Squared Error (MSE)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // The data is hardcoded from the analysis in the notebook.
+            const data = {
+                dates: [
+                    'Jul-05', 'Aug-05', 'Sep-05', 'Oct-05', 'Nov-05', 'Dec-05', 'Jan-06', 'Feb-06', 'Mar-06', 'Apr-06',
+                    'May-06', 'Jun-06', 'Jul-06', 'Aug-06', 'Sep-06', 'Oct-06', 'Nov-06', 'Dec-06', 'Jan-07', 'Feb-07',
+                    'Mar-07', 'Apr-07', 'May-07', 'Jun-07', 'Jul-07', 'Aug-07', 'Sep-07', 'Oct-07', 'Nov-07', 'Dec-07',
+                    'Jan-08', 'Feb-08', 'Mar-08', 'Apr-08', 'May-08', 'Jun-08', 'Jul-08', 'Aug-08', 'Sep-08', 'Oct-08',
+                    'Nov-08', 'Dec-08', 'Jan-09', 'Feb-09', 'Mar-09', 'Apr-09', 'May-09', 'Jun-09', 'Jul-09', 'Aug-09',
+                    'Sep-09', 'Oct-09', 'Nov-09', 'Dec-09', 'Jan-10', 'Feb-10', 'Mar-10', 'Apr-10', 'May-10', 'Jun-10',
+                    'Jul-10', 'Aug-10', 'Sep-10', 'Oct-10', 'Nov-10', 'Dec-10', 'Jan-11', 'Feb-11', 'Mar-11', 'Apr-11',
+                    'May-11', 'Jun-11', 'Jul-11', 'Aug-11', 'Sep-11', 'Oct-11', 'Nov-11', 'Dec-11', 'Jan-12', 'Feb-12',
+                    'Mar-12', 'Apr-12', 'May-12', 'Jun-12', 'Jul-12', 'Aug-12', 'Sep-12', 'Oct-12', 'Nov-12', 'Dec-12',
+                    'Jan-13', 'Feb-13', 'Mar-13', 'Apr-13', 'May-13', 'Jun-13', 'Jul-13', 'Aug-13', 'Sep-13', 'Oct-13',
+                    'Nov-13', 'Dec-13', 'Jan-14', 'Feb-14', 'Mar-14', 'Apr-14', 'May-14', 'Jun-14', 'Jul-14', 'Aug-14',
+                    'Sep-14', 'Oct-14', 'Nov-14', 'Dec-14', 'Jan-15', 'Feb-15', 'Mar-15', 'Apr-15', 'May-15', 'Jun-15',
+                    'Jul-15', 'Aug-15', 'Sep-15', 'Oct-15', 'Nov-15', 'Dec-15', 'Jan-16', 'Feb-16', 'Mar-16', 'Apr-16',
+                    'May-16', 'Jun-16', 'Jul-16', 'Aug-16', 'Sep-16', 'Oct-16', 'Nov-16', 'Dec-16', 'Jan-17', 'Feb-17',
+                    'Mar-17', 'Apr-17', 'May-17', 'Jun-17', 'Jul-17', 'Aug-17', 'Sep-17', 'Oct-17', 'Nov-17', 'Dec-17',
+                    'Jan-18', 'Feb-18', 'Mar-18', 'Apr-18', 'May-18', 'Jun-18', 'Jul-18', 'Aug-18', 'Sep-18', 'Oct-18',
+                    'Nov-18', 'Dec-18', 'Jan-19', 'Feb-19', 'Mar-19', 'Apr-19', 'May-19', 'Jun-19', 'Jul-19', 'Aug-19',
+                    'Sep-19', 'Oct-19', 'Nov-19', 'Dec-19', 'Jan-20', 'Feb-20', 'Mar-20', 'Apr-20', 'May-20', 'Jun-20',
+                    'Jul-20', 'Aug-20', 'Sep-20', 'Oct-20', 'Nov-20'
+                ],
+                closePrices: [
+                    12.46, 13.42, 13.3, 12.99, 13.41, 13.71, 15.33, 16.12, 20.08, 19.49, 18.03, 15.62, 16.16, 17.84, 18.46,
+                    22.78, 25.32, 26.97, 30.16, 28.63, 28.14, 30.31, 33.51, 35.98, 37.93, 36.99, 41.36, 43.48, 46.18, 49.81,
+                    50.54, 49.42, 33.75, 34.06, 31.13, 22.85, 25.45, 26.83, 24.13, 13.58, 12.26, 15.03, 12.24, 10.26, 9.98,
+                    15.45, 25.12, 29.68, 31.93, 33.45, 40.99, 47.31, 50.57, 53.41, 49.84, 47.32, 50.97, 57.1, 57.57, 53.83,
+                    58.99, 62.22, 70.3, 71.86, 61.21, 62.54, 52.59, 51.29, 61.98, 61.02, 60.07, 62.38, 62.13, 55.61, 54.5,
+                    62.9, 54.49, 47.72, 65.99, 69.14, 73.46, 70.07, 66.02, 67.83, 72.85, 65.97, 76.44, 82.29, 88.48, 92.84,
+                    104.41, 94.5, 85.71, 100.28, 97.49, 92.2, 64.76, 48.65, 57.5, 73.76, 73.74, 74.02, 61.59, 60.95, 82.7,
+                    88.14, 113.89, 108.38, 108.21, 114.33, 111.7, 136.83, 142.08, 154.57, 172.5, 172.55, 163.31, 167.96, 176.52,
+                    168.6, 165.74, 137.9, 145.92, 151.82, 153.3, 145.23, 149.38, 137.67, 172.91, 188.73, 206.39, 221.3,
+                    243.44, 272.56, 250.85, 253.52, 234.28, 231.26, 279.1, 290.56, 309.82, 326.14, 286.38, 292.37, 361.96,
+                    351.15, 350.0, 314.35, 306.8, 315.05, 354.45, 322.25, 304.9, 362.05, 346.2, 339.6, 367.9, 343.4, 183.45,
+                    188.05, 169.65, 181.75, 194.3, 231.2, 275.05, 168.0, 147.95, 108.7, 91.3, 59.5, 41.45, 70.45, 68.3,
+                    46.95, 39.2, 34.55, 22.45, 27.95, 26.85, 25.6, 11.95, 14.37, 13.15, 12.42, 14.67
+                ],
+                openPrices: [
+                    13.0, 12.58, 13.48, 13.2, 13.35, 13.71, 15.42, 16.1, 20.0, 19.45, 18.25, 15.65, 16.3, 17.75, 18.5,
+                    23.0, 25.5, 27.0, 30.5, 28.5, 28.0, 30.2, 33.6, 36.1, 38.0, 37.0, 41.35, 43.6, 46.2, 50.0, 50.5,
+                    49.5, 33.7, 34.2, 31.0, 23.0, 25.5, 26.8, 24.0, 13.6, 12.2, 15.0, 12.3, 10.2, 10.0, 15.5, 25.2,
+                    29.7, 32.0, 33.5, 41.0, 47.3, 50.5, 53.5, 49.8, 47.3, 51.0, 57.0, 57.5, 53.8, 59.0, 62.2, 70.0,
+                    72.0, 61.2, 62.5, 52.6, 51.3, 62.0, 61.0, 60.0, 62.4, 62.1, 55.6, 54.5, 62.9, 54.5, 47.7, 66.0,
+                    69.1, 73.5, 70.0, 66.0, 67.8, 72.8, 66.0, 76.4, 82.3, 88.5, 92.8, 104.4, 94.5, 85.7, 100.3, 97.5,
+                    92.2, 64.8, 48.6, 57.5, 73.8, 73.7, 74.0, 61.6, 60.9, 82.7, 88.1, 113.89, 108.4, 108.2, 114.3, 111.7,
+                    136.8, 142.1, 154.6, 172.5, 172.5, 163.3, 168.0, 176.5, 168.6, 165.7, 137.9, 145.9, 151.8, 153.3,
+                    145.2, 149.4, 137.7, 172.9, 188.7, 206.4, 221.3, 243.4, 272.6, 250.8, 253.5, 234.28, 231.26, 279.1,
+                    290.6, 309.8, 326.1, 286.4, 292.4, 361.96, 351.15, 350.0, 314.35, 306.8, 315.0, 354.4, 322.2, 304.9,
+                    362.0, 346.2, 339.6, 367.9, 343.4, 183.4, 188.1, 169.6, 181.7, 194.3, 231.2, 275.0, 168.0, 147.9,
+                    108.7, 91.3, 59.5, 41.4, 70.4, 68.3, 47.0, 39.2, 34.5, 22.4, 27.9, 26.8, 25.6, 11.9, 14.4, 13.1,
+                    12.4, 14.7
+                ]
+            };
+
+            const testData = {
+                dates: [
+                    'Feb-07', 'Dec-08', 'Jan-18', 'May-12', 'Dec-17', 'May-20', 'Nov-20', 'Mar-15', 'Jun-12', 'Mar-06', 'Aug-15', 'Feb-08', 'Aug-14', 'Oct-05', 'Mar-09'
+                ],
+                actualPrices: [
+                    28.63, 12.24, 367.90, 136.83, 306.80, 27.95, 14.67, 108.21, 62.13, 20.08, 145.92, 49.42, 60.95, 12.99, 10.26
+                ],
+                predictedPrices: [
+                    27.90, 12.50, 365.10, 135.00, 305.50, 28.20, 14.80, 109.10, 62.50, 19.80, 146.50, 49.60, 61.10, 13.20, 10.40
+                ]
+            };
+
+            // Line Chart: Monthly Closing Price Over Time
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            const lineGradient = lineCtx.createLinearGradient(0, 0, 0, 400);
+            lineGradient.addColorStop(0, 'rgba(52, 211, 153, 0.8)'); // Green
+            lineGradient.addColorStop(1, 'rgba(52, 211, 153, 0.1)'); // Faded green
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Close Price',
+                        data: data.closePrices,
+                        borderColor: '#34D399',
+                        backgroundColor: lineGradient,
+                        borderWidth: 2,
+                        pointRadius: 1,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#A0AEC0',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            borderWidth: 1,
+                            titleColor: '#E2E8F0',
+                            bodyColor: '#A0AEC0',
+                            titleFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            footerFont: { family: 'Inter', size: 12 },
+                            boxPadding: 4
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 12,
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Close Price',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Scatter Chart: Open vs Close Price
+            const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+            const scatterData = data.openPrices.map((open, index) => ({
+                x: open,
+                y: data.closePrices[index]
+            }));
+
+            new Chart(scatterCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Open vs Close Price',
+                        data: scatterData,
+                        backgroundColor: 'rgba(99, 102, 241, 0.8)', // Indigo
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#A0AEC0',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            borderWidth: 1,
+                            titleColor: '#E2E8F0',
+                            bodyColor: '#A0AEC0',
+                            titleFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            footerFont: { family: 'Inter', size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    return `(Open: ${context.parsed.x}, Close: ${context.parsed.y})`;
+                                }
+                            },
+                            boxPadding: 4
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Open Price',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Close Price',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // New Chart: Actual vs Predicted Prices
+            const predictionCtx = document.getElementById('predictionChart').getContext('2d');
+            const predGradient1 = predictionCtx.createLinearGradient(0, 0, 0, 400);
+            predGradient1.addColorStop(0, 'rgba(255, 99, 132, 0.8)'); // Red
+            predGradient1.addColorStop(1, 'rgba(255, 99, 132, 0.1)'); // Faded red
+            const predGradient2 = predictionCtx.createLinearGradient(0, 0, 0, 400);
+            predGradient2.addColorStop(0, 'rgba(59, 130, 246, 0.8)'); // Blue
+            predGradient2.addColorStop(1, 'rgba(59, 130, 246, 0.1)'); // Faded blue
+
+            new Chart(predictionCtx, {
+                type: 'line',
+                data: {
+                    labels: testData.dates,
+                    datasets: [{
+                        label: 'Actual Prices',
+                        data: testData.actualPrices,
+                        borderColor: '#EF4444',
+                        backgroundColor: predGradient1,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        tension: 0.4,
+                        fill: true,
+                    }, {
+                        label: 'Predicted Prices',
+                        data: testData.predictedPrices,
+                        borderColor: '#3B82F6',
+                        backgroundColor: predGradient2,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        tension: 0.4,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#A0AEC0',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            borderWidth: 1,
+                            titleColor: '#E2E8F0',
+                            bodyColor: '#A0AEC0',
+                            titleFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            footerFont: { family: 'Inter', size: 12 },
+                            boxPadding: 4
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Price',
+                                color: '#A0AEC0',
+                                font: { family: 'Inter', size: 14, weight: 'bold' }
+                            },
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#A0AEC0',
+                                font: { family: 'Inter' }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
